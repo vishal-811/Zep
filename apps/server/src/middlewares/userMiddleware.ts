@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 export function userMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const header = req.headers["authorization"];
   const token = header?.split(" ")[1];
@@ -17,7 +17,7 @@ export function userMiddleware(
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "ZEPSECRET"
+      process.env.JWT_SECRET || "ZEPSECRET",
     ) as { role: string; userId: string };
     req.userId = decoded.userId;
     next();

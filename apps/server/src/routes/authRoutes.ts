@@ -31,16 +31,19 @@ router.post("/signup", async (req, res) => {
       data: {
         username: req.body.username,
         password: hashedPassword,
-        role: req.body.type === "admin" ?"admin" :"user",
+        role: req.body.type === "admin" ? "admin" : "user",
       },
     });
     const username = req.body.username;
     const userId = user.id;
-    const token = jwt.sign({ username , userId}, process.env.JWT_SECRET || "ZEPSECRET");
+    const token = jwt.sign(
+      { username, userId },
+      process.env.JWT_SECRET || "ZEPSECRET",
+    );
 
     res.status(201).json({ msg: "Signup Success", token: token });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ msg: "Something Went wrong" });
   }
 });
@@ -70,7 +73,10 @@ router.post("/signin", async (req, res) => {
     }
     const userId = userExist.id;
     const role = userExist.role;
-    const token = jwt.sign({ userId , role }, process.env.JWT_SECRET || "ZEPSECRET");
+    const token = jwt.sign(
+      { userId, role },
+      process.env.JWT_SECRET || "ZEPSECRET",
+    );
     res.status(200).json({ msg: "Signin Sucess", token: token });
   } catch (error) {
     res.status(500).json({ msg: "Soemthing Went Wrong" });

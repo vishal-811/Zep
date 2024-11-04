@@ -51,7 +51,6 @@ router.get("/metadata/bulk", async (req, res) => {
   }
 });
 
-
 router.get("/metadata/avatar", userMiddleware, async (req, res) => {
   try {
     const userId = req.userId;
