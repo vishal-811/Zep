@@ -10,9 +10,10 @@ import {
 
 const router = Router();
 
+// Used TO create A space
 router.post("/", userMiddleware, async (req, res) => {
   const isValidate = createSpaceSchema.safeParse(req.body);
-  if (!isValidate) {
+  if (!isValidate.success) {
     res.status(401).json({ msg: "Unauthorized" });
     return;
   }
@@ -23,9 +24,10 @@ router.post("/", userMiddleware, async (req, res) => {
     const space = await prisma.space.create({
       data: {
         name: req.body.name,
-        height: height,
-        width: width,
-        creatorId: req.body.userId,
+        width:Number( width),
+        height:Number(height),
+        thumbnail : req.body.thumbnail,
+        creatorId: req.userId,
       },
     });
     res
@@ -42,6 +44,7 @@ router.post("/", userMiddleware, async (req, res) => {
       mapElements: true,
       width: true,
       height: true,
+      thumbnail : true
     },
   });
   if (!validateMap) {
@@ -55,6 +58,7 @@ router.post("/", userMiddleware, async (req, res) => {
         width: validateMap.width,
         height: validateMap.height,
         creatorId: req.body.userId,
+        thumbnail : validateMap.thumbnail
       },
     });
 
@@ -67,38 +71,10 @@ router.post("/", userMiddleware, async (req, res) => {
       })),
     });
   });
-  res.status(201).json({ msg: "Space Created Successfully" });
+  res.status(201).json({ msg: "Space Created Successfully from default map" });
 });
 
-router.delete("/element", userMiddleware, async (req, res) => {
-  const isValidate = deleteSpaceElementSchema.safeParse(req.body);
-  if (!isValidate) {
-    res.status(401).json({ msg: "Wrong Inputs" });
-  }
-  const spaceElement = await prisma.spaceElements.findFirst({
-     where :{
-      id : req.body.id
-     },
-     include:{
-      space : true
-     }
-  })
-  if(spaceElement?.space.creatorId != req.userId){
-    res.status(401).json({msg :"Unauthorized"});
-  }
-
-  try {
-    await prisma.spaceElements.delete({
-      where: {
-        id: req.body.id,
-      },
-    });
-    res.status(200).json({ msg: "Element deleted Successfully" });
-  } catch (error) {
-    res.status(500).json({ msg: "Something Went Wrong" });
-  }
-});
-
+// used to delete a space.
 router.delete("/:spaceId", userMiddleware, async (req, res) => {
   const spaceId = req.params.spaceId;
   const userId = req.userId;
@@ -143,14 +119,16 @@ router.delete("/:spaceId", userMiddleware, async (req, res) => {
   }
 });
 
+// This is used to get all the spaces of a user.
 router.get("/all", userMiddleware, async (req, res) => {
   const userId = req.userId;
   try {
-    const AllSpaces = await prisma.user.findFirst({
+    const UserAllSpaces = await prisma.user.findFirst({
       where: {
         id: userId,
       },
-      include: {
+      select:{
+        username:true,
         spaces: {
           select: {
             name: true,
@@ -161,22 +139,22 @@ router.get("/all", userMiddleware, async (req, res) => {
         },
       },
     });
-    res.status(200).json({ msg: "Sucess", spaces: AllSpaces });
+    res.status(200).json({ msg: "Sucess", spaces: UserAllSpaces });
   } catch (error) {
     res.status(500).json({ msg: "Somemthing went wrong" });
   }
 });
 
-
+// Get the user arena all details (Like In a space where the space Element is present along with its cordinates, its height, width etc.)
 router.get('/:spaceId', userMiddleware, async(req,res)=>{
   try {
     const Space = await prisma.space.findFirst({
       where :{
         id : req.params.spaceId
       },
-      include:{
+       include:{
         spaceElements :{
-           include :{
+           select :{
             element : true
            }
         }
@@ -185,19 +163,33 @@ router.get('/:spaceId', userMiddleware, async(req,res)=>{
   if(!Space){
     res.status(404).json({msg :"No Space Found"});
   }
-    // pending
-    console.log(Space);
+  //  Give all the details of the space Elements that are present in the space.
+   res.status(200).json({
+      data : {
+        dimension :`${Space?.width}x${Space?.height}`,
+        "elements" : Space?.spaceElements.map(e=>({
+           element :{
+             id : e.element.id,
+             imageUrl : e.element.imageUrl,
+             static :e.element.static,
+             width : e.element.width,
+             height : e.element.height
+           }
+        }))
+      }
+   })
   } catch (error) {
     res.status(500).json({msg :"Something went wrong"});
   }
 })
 
 
-// Put an element in the space 
+// add an element in the space 
 router.post('/element',userMiddleware, async(req,res)=>{
    const isValidate = placedElementsSchema.safeParse(req.body);
    if(!isValidate.success){
      res.status(401).json({msg :"Wrong Inputs"});
+     return;
    }
 
   // check that the space is valid or not 
@@ -213,38 +205,44 @@ router.post('/element',userMiddleware, async(req,res)=>{
   })
   if(!validSpace){
     res.status(401).json({msg :"Invalid SpaceId"});
+    return;
   }
    
   if(validSpace){
     if(req.body.x <0 || req.body.y <0 || req.body.x >validSpace?.width || req.body.y > validSpace?.height){
        res.status(401).json({msg :"Please choose a valid point to place element"})
+       return;
     }
   }
 
   const validElement = await prisma.element.findFirst({
      where :{
-      id : req.body.elemenId
+      id : req.body.elementId
      }
   })
   if(!validElement){
      res.status(401).json({msg :"Wrong Element Id"});
+     return;
   }
 
   const SpaceElement = await prisma.spaceElements.create({
       data:{
-        elemenId : req.body.elemenId,
+        elemenId : req.body.elementId,
         spaceId : req.body.spaceId,
         x : req.body.x,
         y: req.body.y
       }
   })
    res.status(201).json({msg :"New Element added Sucessfully"});
+   return;
 })
 
-router.delete('/delete', userMiddleware , async(req,res)=>{
+// Delete a SpaceElement from the spaceElement.
+router.delete('/element', userMiddleware , async(req,res)=>{
    const isValidate = deleteElementSchema.safeParse(req.body);
    if(!isValidate.success){
       res.status(401).json({msg :"Wrong Inputs"});
+      return;
    }
    const userId = req.userId;
    const ValidSpace = await prisma.spaceElements.findFirst({
@@ -257,10 +255,12 @@ router.delete('/delete', userMiddleware , async(req,res)=>{
    })
    if(!ValidSpace){
     res.status(401).json({msg :"No Space Exist with  this space Id"});
+    return;
    }
 
    if(ValidSpace?.space.creatorId != userId){
       res.status(401).json({msg :"You are not allowed to perform this action"})
+      return;
    }
 
    await prisma.spaceElements.delete({
@@ -269,6 +269,9 @@ router.delete('/delete', userMiddleware , async(req,res)=>{
        }
     })
     res.status(200).json({msg :"SpaceElement Deleted sucessfully"});
+    return;
 })
+
+
 
 export default router;

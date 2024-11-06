@@ -1,4 +1,4 @@
-import { object, string, z } from "zod";
+import { z } from "zod";
 
 export const SignupSchema = z.object({
   username: z.string(),
@@ -11,14 +11,12 @@ export const SigninSchema = z.object({
   password: z.string(),
 });
 
-export const UpdateMetadataSchema = z.object({
-  avatarId: string(),
-});
 
 export const createSpaceSchema = z.object({
   name: z.string(),
   dimension: z.string(),
   thumbnail: z.string(),
+  mapId : z.string().optional()
 });
 
 export const deleteSpaceElementSchema = z.object({
@@ -62,4 +60,8 @@ export const placedElementsSchema = z.object({
 
 export const deleteElementSchema = z.object({
     id : z.string()
+})
+
+export const updatemetadataSchema = z.object({
+    avatarId  : z.string()
 })

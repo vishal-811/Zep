@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/routes/authroutes.ts","./src/routes/index.ts"],"version":"5.6.3"}
+{"root":["./src/index.ts","./src/middlewares/adminmiddleware.ts","./src/middlewares/usermiddleware.ts","./src/routes/adminroutes.ts","./src/routes/allelements.ts","./src/routes/authroutes.ts","./src/routes/index.ts","./src/routes/spaceroutes.ts","./src/routes/userroutes.ts","./src/types/express.d.ts"],"version":"5.6.3"}

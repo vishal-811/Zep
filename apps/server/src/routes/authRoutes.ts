@@ -10,7 +10,7 @@ import prisma from "@repo/db/prisma";
 router.post("/signup", async (req, res) => {
   try {
     const isValidate = SignupSchema.safeParse(req.body);
-    if (!isValidate) {
+    if (!isValidate.success) {
       res.status(401).json({ msg: "Unauthorized" });
       return;
     }
@@ -31,7 +31,7 @@ router.post("/signup", async (req, res) => {
       data: {
         username: req.body.username,
         password: hashedPassword,
-        role: req.body.type === "admin" ? "admin" : "user",
+        role: req.body.role === "admin" ? "admin" : "user",
       },
     });
     const username = req.body.username;
@@ -51,7 +51,7 @@ router.post("/signup", async (req, res) => {
 router.post("/signin", async (req, res) => {
   try {
     const isValidate = SigninSchema.safeParse(req.body);
-    if (!isValidate) {
+    if (!isValidate.success) {
       res.status(401).json({ msg: "unauthorized" });
       return;
     }
