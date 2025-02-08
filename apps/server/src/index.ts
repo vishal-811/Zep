@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import rootRouter from "./routes";
 
@@ -12,6 +12,10 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1", rootRouter);
+
+app.get("/healthy", (req: Request, res: Response) => {
+  res.send("Everything is fine!");
+});
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
